@@ -1,0 +1,229 @@
+default:
+  preprocess_settings:
+    feature_setting1_average_clusters: &ref_preprocess_fs1_av
+      n_cluster: 62
+      use_average_over_clusters: TRUE
+      grid_resolution: 0.25
+      include_solar_position: TRUE
+      calendar_vars: &ref_calendar_vars_fs1
+        - "local_timestamp"
+        - "date" 
+        - "hour"
+      weather_variables: &ref_weather_variables_fs1
+        - "surface_net_solar_radiation"
+    
+    feature_setting1_5_clusters: &ref_preprocess_fs1_cl5
+      window_in_days: 1095
+      n_cluster: 5
+      use_average_over_clusters: FALSE
+      grid_resolution: 0.25
+      include_solar_position: TRUE
+      calendar_vars: *ref_calendar_vars_fs1
+      weather_variables: *ref_weather_variables_fs1
+
+    feature_setting1_12_clusters: &ref_preprocess_fs1_cl12
+      window_in_days: 1095
+      n_cluster: 12
+      use_average_over_clusters: FALSE
+      grid_resolution: 0.25
+      include_solar_position: TRUE
+      calendar_vars: *ref_calendar_vars_fs1
+      weather_variables: *ref_weather_variables_fs1
+
+    feature_setting2_average_clusters: &ref_preprocess_fs2_av
+      window_in_days: 1095
+      n_cluster: 62
+      use_average_over_clusters: TRUE
+      grid_resolution: 0.25
+      include_solar_position: TRUE
+      calendar_vars: &ref_calendar_vars_fs2
+        - "local_timestamp"
+        - "date" 
+        - "hour"
+      weather_variables: &ref_weather_variables_fs2
+        - "surface_net_solar_radiation"
+        - "surface_solar_radiation_downwards"
+        - "relative_humidity"
+        - "total_cloud_cover"
+        - "temperature_2m"
+        - "wind_chill_index"
+
+    feature_setting2_5_clusters: &ref_preprocess_fs2_cl5
+      window_in_days: 1095
+      n_cluster: 5
+      use_average_over_clusters: FALSE
+      grid_resolution: 0.25
+      include_solar_position: TRUE
+      calendar_vars: *ref_calendar_vars_fs2
+      weather_variables: *ref_weather_variables_fs2
+
+    feature_setting2_12_clusters: &ref_preprocess_fs2_cl12
+      window_in_days: 1095
+      n_cluster: 12
+      use_average_over_clusters: FALSE
+      grid_resolution: 0.25
+      include_solar_position: TRUE
+      calendar_vars: *ref_calendar_vars_fs2
+      weather_variables: *ref_weather_variables_fs2
+  
+  model_settings:
+    linear_regression: &ref_lm
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "lm"
+      target_var: "load_factor_interpolated"
+      other_vars: &ref_other_vars
+        - "timestamp"
+        - "local_timestamp"
+        - "date"
+        - "hour"
+        - "elia_act_generation_solar_belgium"
+        - "elia_monitored_capacity"
+        - "elia_interpolated_monitored_capacity"
+        - "load_factor"
+        # - "load_factor_interpolated"
+      dates_outlier:  &ref_dates_outlier
+        - "2022-04-01"
+        - "2022-07-21"
+        - "2022-09-14"
+
+    regression_tree: &ref_rt
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "rpart"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters: 
+        tune_hyperparameters: ["cost_complexity", "tree_depth", "min_n"]
+    
+    random_forest: &ref_rf
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "ranger"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters:
+          trees: 600
+        tune_hyperparameters: ["mtry", "min_n"]
+    
+    xgboost: &ref_xgb
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "xgboost"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters:
+          trees: 600
+        tune_hyperparameters: ["mtry", "min_n", "tree_depth", "learn_rate", "loss_reduction", "sample_size"]
+
+  included_models:
+    solar_load_factor_be_fs1_av_lm:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_lm
+
+    solar_load_factor_be_fs1_av_rt:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_rt
+    
+    solar_load_factor_be_fs1_av_rf:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_rf
+    
+    solar_load_factor_be_fs1_av_xgb:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_xgb
+    
+    solar_load_factor_be_fs1_cl5_lm:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_lm
+  
+    solar_load_factor_be_fs1_cl5_rt:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_rt
+      
+    solar_load_factor_be_fs1_cl5_rf:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_rf
+      
+    solar_load_factor_be_fs1_cl5_xgb:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_xgb
+      
+    solar_load_factor_be_fs1_cl12_lm:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_lm
+    
+    solar_load_factor_be_fs1_cl12_rt:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_rt
+    
+    solar_load_factor_be_fs1_cl12_rf:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_rf
+  
+    solar_load_factor_be_fs1_cl12_xgb:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_xgb
+  
+    solar_load_factor_be_fs2_av_lm:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_lm
+    
+    solar_load_factor_be_fs2_av_rt:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_rt
+    
+    solar_load_factor_be_fs2_av_rf:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_rf
+    
+    solar_load_factor_be_fs2_av_xgb:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_xgb
+    
+    solar_load_factor_be_fs2_cl5_lm:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_lm
+  
+    solar_load_factor_be_fs2_cl5_rt:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_rt
+    
+    solar_load_factor_be_fs2_cl5_rf:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_rf
+    
+    solar_load_factor_be_fs2_cl5_xgb:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_xgb
+    
+    solar_load_factor_be_fs2_cl12_lm:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_lm
+    
+    solar_load_factor_be_fs2_cl12_rt:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_rt
+    
+    solar_load_factor_be_fs2_cl12_rf:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_rf
+  
+    solar_load_factor_be_fs2_cl12_xgb:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_xgb
