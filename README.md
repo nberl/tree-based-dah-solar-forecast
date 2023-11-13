@@ -2,8 +2,12 @@
 
 ## Init project
 
-First run:
+First source the file: cpp/__init__.R
 
-And check if all packages are correctly installed
+Afterwards:
+
+run __init__/install_packages.R
+
+Check if all packages are correctly installed
 
 ## Main files
