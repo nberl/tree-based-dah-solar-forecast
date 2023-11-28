@@ -10,7 +10,7 @@ run `"__init__/install_packages.R"`
 
 Check if all packages are correctly installed
 
-## How to use
+## Results
 
 The files in the folder main are used to generate the results.
 Most of the results are saved and included in the folder results.
