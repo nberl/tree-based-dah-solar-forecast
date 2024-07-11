@@ -86,7 +86,65 @@ default:
         - "2022-04-01"
         - "2022-07-21"
         - "2022-09-14"
-
+    
+    multilayer_perceptron: &ref_mlp
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "nnet"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters: 
+        tune_hyperparameters: ["hidden_units", "penalty", "epochs"]
+    
+    elnet: &ref_elnet
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "glmnet"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters: 
+        tune_hyperparameters: ["penalty", "mixture"]
+    
+    lasso: &ref_lasso
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "glmnet"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters: 
+          mixture: 1
+        tune_hyperparameters: ["penalty"]
+    
+    ridge: &ref_ridge
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "glmnet"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters: 
+          mixture: 0
+        tune_hyperparameters: ["penalty"]
+    
     regression_tree: &ref_rt
       train_window_in_days: 1095  # 3 years (= 3 * 365 days)
       mode: "regression"
@@ -131,11 +189,49 @@ default:
           trees: 600
         tune_hyperparameters: ["mtry", "min_n", "tree_depth", "learn_rate", "loss_reduction", "sample_size"]
 
+    xgboost_n100: &ref_xgb_n100
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "xgboost"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters:
+          trees: 100
+        tune_hyperparameters: ["mtry", "min_n", "tree_depth", "learn_rate", "loss_reduction", "sample_size"]
+
+    xgboost_n800: &ref_xgb_n800
+      train_window_in_days: 1095  # 3 years (= 3 * 365 days)
+      mode: "regression"
+      engine: "xgboost"
+      target_var: "load_factor_interpolated"
+      other_vars: *ref_other_vars
+      dates_outlier: *ref_dates_outlier
+      tune:
+        train_window_in_days: 730  # 2 years (= 2 * 365 days)
+        validation_window: 30 # days
+        n_validation_sets: 12
+        fixed_hyperparameters:
+          trees: 800
+        tune_hyperparameters: ["mtry", "min_n", "tree_depth", "learn_rate", "loss_reduction", "sample_size"]
+
   included_models:
     solar_load_factor_be_fs1_av_lm:
       preprocess: *ref_preprocess_fs1_av
       model: *ref_lm
-
+      
+    solar_load_factor_be_fs1_av_elnet:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_elnet
+    
+    solar_load_factor_be_fs1_av_lasso:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_lasso
+    
     solar_load_factor_be_fs1_av_rt:
       preprocess: *ref_preprocess_fs1_av
       model: *ref_rt
@@ -147,10 +243,30 @@ default:
     solar_load_factor_be_fs1_av_xgb:
       preprocess: *ref_preprocess_fs1_av
       model: *ref_xgb
+      
+    solar_load_factor_be_fs1_av_xgb_n100:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_xgb_n100
+      
+    solar_load_factor_be_fs1_av_xgb_n800:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_xgb_n800
+      
+    solar_load_factor_be_fs1_av_mlp:
+      preprocess: *ref_preprocess_fs1_av
+      model: *ref_mlp
     
     solar_load_factor_be_fs1_cl5_lm:
       preprocess: *ref_preprocess_fs1_cl5
       model: *ref_lm
+      
+    solar_load_factor_be_fs1_cl5_elnet:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_elnet
+      
+    solar_load_factor_be_fs1_cl5_lasso:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_lasso
   
     solar_load_factor_be_fs1_cl5_rt:
       preprocess: *ref_preprocess_fs1_cl5
@@ -163,10 +279,30 @@ default:
     solar_load_factor_be_fs1_cl5_xgb:
       preprocess: *ref_preprocess_fs1_cl5
       model: *ref_xgb
+    
+    solar_load_factor_be_fs1_cl5_xgb_n100:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_xgb_n100
       
+    solar_load_factor_be_fs1_cl5_xgb_n800:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_xgb_n800
+      
+    solar_load_factor_be_fs1_cl5_mlp:
+      preprocess: *ref_preprocess_fs1_cl5
+      model: *ref_mlp
+     
     solar_load_factor_be_fs1_cl12_lm:
       preprocess: *ref_preprocess_fs1_cl12
       model: *ref_lm
+      
+    solar_load_factor_be_fs1_cl12_elnet:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_elnet
+    
+    solar_load_factor_be_fs1_cl12_lasso:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_lasso
     
     solar_load_factor_be_fs1_cl12_rt:
       preprocess: *ref_preprocess_fs1_cl12
@@ -179,10 +315,30 @@ default:
     solar_load_factor_be_fs1_cl12_xgb:
       preprocess: *ref_preprocess_fs1_cl12
       model: *ref_xgb
-  
+    
+    solar_load_factor_be_fs1_cl12_xgb_n100:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_xgb_n100
+      
+    solar_load_factor_be_fs1_cl12_xgb_n800:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_xgb_n800
+    
+    solar_load_factor_be_fs1_cl12_mlp:
+      preprocess: *ref_preprocess_fs1_cl12
+      model: *ref_mlp
+    
     solar_load_factor_be_fs2_av_lm:
       preprocess: *ref_preprocess_fs2_av
       model: *ref_lm
+      
+    solar_load_factor_be_fs2_av_elnet:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_elnet
+    
+    solar_load_factor_be_fs2_av_lasso:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_lasso
     
     solar_load_factor_be_fs2_av_rt:
       preprocess: *ref_preprocess_fs2_av
@@ -195,10 +351,30 @@ default:
     solar_load_factor_be_fs2_av_xgb:
       preprocess: *ref_preprocess_fs2_av
       model: *ref_xgb
+      
+    solar_load_factor_be_fs2_av_xgb_n100:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_xgb_n100
+      
+    solar_load_factor_be_fs2_av_xgb_n800:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_xgb_n800
+      
+    solar_load_factor_be_fs2_av_mlp:
+      preprocess: *ref_preprocess_fs2_av
+      model: *ref_mlp
     
     solar_load_factor_be_fs2_cl5_lm:
       preprocess: *ref_preprocess_fs2_cl5
       model: *ref_lm
+      
+    solar_load_factor_be_fs2_cl5_elnet:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_elnet
+  
+    solar_load_factor_be_fs2_cl5_lasso:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_lasso
   
     solar_load_factor_be_fs2_cl5_rt:
       preprocess: *ref_preprocess_fs2_cl5
@@ -211,10 +387,30 @@ default:
     solar_load_factor_be_fs2_cl5_xgb:
       preprocess: *ref_preprocess_fs2_cl5
       model: *ref_xgb
-    
+      
+    solar_load_factor_be_fs2_cl5_xgb_n100:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_xgb_n100
+      
+    solar_load_factor_be_fs2_cl5_xgb_n800:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_xgb_n800
+      
+    solar_load_factor_be_fs2_cl5_mlp:
+      preprocess: *ref_preprocess_fs2_cl5
+      model: *ref_mlp
+      
     solar_load_factor_be_fs2_cl12_lm:
       preprocess: *ref_preprocess_fs2_cl12
       model: *ref_lm
+      
+    solar_load_factor_be_fs2_cl12_elnet:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_elnet
+    
+    solar_load_factor_be_fs2_cl12_lasso:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_lasso
     
     solar_load_factor_be_fs2_cl12_rt:
       preprocess: *ref_preprocess_fs2_cl12
@@ -227,3 +423,15 @@ default:
     solar_load_factor_be_fs2_cl12_xgb:
       preprocess: *ref_preprocess_fs2_cl12
       model: *ref_xgb
+      
+    solar_load_factor_be_fs2_cl12_xgb_n100:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_xgb_n100
+      
+    solar_load_factor_be_fs2_cl12_xgb_n800:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_xgb_n800
+      
+    solar_load_factor_be_fs2_cl12_mlp:
+      preprocess: *ref_preprocess_fs2_cl12
+      model: *ref_mlp
