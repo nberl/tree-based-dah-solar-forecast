@@ -2,6 +2,8 @@ box::use(
   dplyr[...],
   ggplot2[...],
   lubridate,
+  reshape2,
+  stats,
   tidyr
 )
 
@@ -174,5 +176,49 @@ plot_weather_variables_time_series <- function(df_averaged_weather, save = FALSE
   return(invisible())
 }
 
-
+#' @export
+plot_correlation_heatmap_variables <- function(df_averaged_weather, save = FALSE) {
+  folder <- "plot/figures/"
+  
+  col_name_mapping <- c(
+    # "LF" = "load_factor_interpolated",
+    # "Azimuth" = "azimuth_4.64_50.65", 
+    # "Zenith" = "zenith_4.64_50.65", 
+    "SNR" = "surface_net_solar_radiation",
+    "SSD" = "surface_solar_radiation_downwards", 
+    "RH" = "relative_humidity", 
+    "TTC" = "total_cloud_cover", 
+    "T2m" = "temperature_2m", 
+    "WCI" = "wind_chill_index"
+  )
+  
+  df_cor <- df_averaged_weather %>% 
+    rename(!!!col_name_mapping) %>%
+    select(all_of(names(col_name_mapping))) %>%
+    stats$cor(.) %>%
+    round(., 5)
+  
+  df_heatmap <- reshape2$melt(df_cor) %>%
+    rename(
+      "variable_1" = Var1,
+      "variable_2" = Var2,
+      "correlation" = value
+    ) 
+  
+  p <- df_heatmap %>%
+    ggplot(aes(x = variable_1, y = variable_2, fill = correlation)) + 
+    geom_tile()
+  
+  if (save) {
+    ggsave(
+      file.path(folder, "variable_correlation_heatmap.pdf"),
+      width = 12, 
+      height = 7,
+      units = "cm"
+    )
+    
+    return(p)
+  }
+  
+}
 

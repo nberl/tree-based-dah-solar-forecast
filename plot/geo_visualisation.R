@@ -1,5 +1,6 @@
 box::use(
   load_data = data/`__init__`,
+  model/analyse_clusters,
   model/common,
   preprocess/centroids,
   cpprfast,
@@ -210,6 +211,29 @@ plot_location_importance <- function(model_name, save = FALSE) {
     ggsave(
       file.path(folder, paste0("location_importance_", model_name, ".pdf")),
       width = 14,
+      height = 7.5,
+      units = "cm"
+    )
+  }
+  
+  return(p)
+}
+
+#' @export
+plot_silhouette_score_per_cluster <- function(save = FALSE) {
+  df_ss <- analyse_clusters$get_silhouette_score_per_n_cluster(c(2:20))
+  
+  p <- df_ss %>%
+    ggplot(aes(x = n_cluster, y = silhouette_score)) +
+    geom_line() +
+    geom_point()
+  
+  
+  folder <- "plot/figures/"
+  if (save) {
+    ggsave(
+      file.path(folder, "silhouette_score_per_cluster.pdf"),
+      width = 9,
       height = 7.5,
       units = "cm"
     )

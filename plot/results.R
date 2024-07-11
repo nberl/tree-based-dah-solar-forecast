@@ -15,7 +15,7 @@ box::use(
 plot_forecast_vs_actual_selected_models_over_selected_periods <- function(save = FALSE) {
   list_selected_models <- list(
     "solar_load_factor_be_fs2_cl5_xgb" = "XGBoost-(b)-5",
-    "solar_load_factor_be_fs2_cl12_rf" = "RF-(b)-12",
+    # "solar_load_factor_be_fs2_cl12_rf" = "RF-(b)-12",
     "solar_load_factor_be_fs2_cl12_xgb" = "XGBoost-(b)-12"
   )
   
@@ -82,7 +82,7 @@ plot_forecast_vs_actual_selected_models_over_selected_periods <- function(save =
         axis.line = element_blank(),
         axis.ticks = element_blank(),
         legend.text = element_text(size = 22)
-      )+
+      ) +
       guides(color = guide_legend(override.aes = list(size = 7)))
     
     assign(paste0("p", i), p)
@@ -111,7 +111,7 @@ plot_daily_metrics_test_set <- function(cumulative = FALSE, save = FALSE) {
   list_selected_models <- list(
     "solar_load_factor_be_fs1_av_lm" = "LR-(a)-average",
     "solar_load_factor_be_fs2_cl5_xgb" = "XGBoost-(b)-5",
-    "solar_load_factor_be_fs2_cl12_rf" = "RF-(b)-12",
+    # "solar_load_factor_be_fs2_cl12_rf" = "RF-(b)-12",
     "solar_load_factor_be_fs2_cl12_xgb" = "XGBoost-(b)-12"
   )
   
@@ -219,7 +219,7 @@ plot_feature_type_importance <- function(model_name, save = FALSE) {
     group_by(variable) %>%
     summarise(
       importance = mean(Importance),
-      groups = "drop"
+      .groups = "drop"
     ) %>%
     mutate(
       lon_lat = gsub("[a-z]|2m", "", variable),
@@ -230,7 +230,7 @@ plot_feature_type_importance <- function(model_name, save = FALSE) {
     group_by(variable_type) %>%
     summarise(
       importance = mean(importance),
-      groups = "drop"
+      .groups = "drop"
     ) %>%
     mutate(
       variable_type = forcats$fct_reorder(variable_type, importance)
