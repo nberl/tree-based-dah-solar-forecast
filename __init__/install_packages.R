@@ -1,6 +1,7 @@
 required_packages <- c(
   "box",
   "config",
+  "cluster",
   "corrr",
   "doParallel",
   "dplyr",
@@ -21,8 +22,9 @@ required_packages <- c(
   "purrr",
   "ranger",
   "Rcpp",
-  "recipes",
   "readxl",
+  "recipes",
+  "reshape2",
   "rnaturalearth",
   "rnaturalearthdata",
   "rpart",
