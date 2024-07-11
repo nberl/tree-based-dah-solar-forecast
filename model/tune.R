@@ -212,8 +212,8 @@ write_tune_result <- function(date, model_name, tune_result) {
   invisible()
 }
 
-select_hyperparameters <- function(tune_result, config) {
-  selected_hyperparameters <- tune$select_best(tune_result, metric = "rmse") %>%
+select_hyperparameters <- function(tune_result, config, metric = "rmse") {
+  selected_hyperparameters <- tune$select_best(tune_result, metric = metric) %>%
     select(-starts_with("."))
   
   # add fixed_hyperparameters
@@ -225,14 +225,26 @@ select_hyperparameters <- function(tune_result, config) {
   return(selected_hyperparameters)
 }
 
-write_hyperparameters <- function(model_name, hyperparameters) {
+write_hyperparameters <- function(model_name, hyperparameters, metric = "rmse") {
   hyperparameters <- hyperparameters[colnames(hyperparameters) %>% sort()]
 
-  path <- common$path_model_hyperparameters(model_name = model_name)
+  path <- common$path_model_hyperparameters(model_name = model_name, metric = metric)
   
   saveRDS(object = hyperparameters, file = path)
   
   logger$log_info("Hyperparameters written to: {path}")
+  
+  invisible()
+}
+
+write_best_hyperparameters <- function(model_name, tune_result, config, metric = "rmse") {
+  hyperparameters <- select_hyperparameters(tune_result, config, metric = metric)
+  
+  write_hyperparameters(
+    model_name = model_name, 
+    hyperparameters = hyperparameters,
+    metric = metric
+  )
   
   invisible()
 }
@@ -245,22 +257,33 @@ run_tune_model <- function(
     save_hyperparameters = TRUE,
     use_multiple_cores = FALSE
 ) {
-  df_output <- tune_model(tune_date, model_name, df_init, config, use_multiple_cores)
-  
-  if (save_tune_result) {
-    write_tune_result(date = tune_date, model_name = model_name, tune_result = df_output)
+  path <- common$path_model_tune_object(date = tune_date, model_name = model_name)
+  if (!file.exists(path)) {
+    df_output <- tune_model(tune_date, model_name, df_init, config, use_multiple_cores)
+    
+    if (save_tune_result) {
+      write_tune_result(date = tune_date, model_name = model_name, tune_result = df_output)
+    }
+  } else {
+    logger$log_info("{model_name} is already tuned!")
+    df_output <- readr::read_rds(path)
   }
   
   if (save_hyperparameters) {
     tune_result <- df_output$tune_result[[1]]
-    hyperparameters <- select_hyperparameters(
+    
+    write_best_hyperparameters(
+      model_name = model_name,
       tune_result = tune_result, 
-      config = config$model$tune
+      config = config$model$tune,
+      metric = "rmse"
     )
     
-    write_hyperparameters(
-      model_name = model_name, 
-      hyperparameters = hyperparameters
+    write_best_hyperparameters(
+      model_name = model_name,
+      tune_result = tune_result, 
+      config = config$model$tune,
+      metric = "mae"
     )
   }
   

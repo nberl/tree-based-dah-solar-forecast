@@ -17,9 +17,11 @@ filter_hour <- function(df, hour) {
 
 #' @export
 get_mcs_result <- function(
-    included_models, alpha, 
+    included_models, 
+    alpha, 
     metric = c("mae", "mse", "smape"),
     statistic = c("Tmax", "TR"),
+    tune_metric = "rmse",
     hour = NULL
 ) {
   metric <- match.arg(metric)
@@ -28,7 +30,10 @@ get_mcs_result <- function(
   df_forecast_result <- included_models %>%
     purrr$map(~ { 
       model_name <- .x
-      folder <- common$dir_model_test_set_object(.x)
+      folder <- common$dir_model_test_set_object(.x, tune_metric = tune_metric)
+      if (length(list.files(folder)) == 0) {
+        folder <- common$dir_model_test_set_object(.x, tune_metric = "rmse")
+      }
       df_fc_x <- list.files(folder) %>%
         purrr$map(~ {
           filename <- .x

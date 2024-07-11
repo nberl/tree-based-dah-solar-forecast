@@ -13,6 +13,11 @@ get_recipe <- function(df, config_model) {
   recipe <- recipes$recipe(target ~ ., data = df[0, ]) %>%
     recipes$step_rm(one_of(!!config_model$other_vars)) 
   
+  if (config_model$engine %in% c("glmnet", "nnet")) {
+    recipe <- recipe %>%
+      recipes$step_normalize(recipes$all_numeric_predictors())
+  }
+
   # if ("hour" %in% colnames(df)) {
   #   recipe <- recipe %>%
   #     recipes$step_mutate_at(hour, fn = factor) %>% 

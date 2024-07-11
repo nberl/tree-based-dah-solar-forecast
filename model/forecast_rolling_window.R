@@ -11,7 +11,7 @@ box::use(
 )
 
 first_train_then_forecast <- function(
-    train_date, model_name, df_init, config, forecast_horizon_in_days = 1
+    train_date, model_name, df_init, config, forecast_horizon_in_days = 1, tune_metric = "rmse"
 ) {
   # training of model and forecast are on the same day, we always predict from the next day
   
@@ -19,7 +19,8 @@ first_train_then_forecast <- function(
     train_date = train_date,
     model_name = model_name,
     df_init = df_init,
-    config = config
+    config = config,
+    tune_metric = tune_metric
   )
   
   df_forecast_result <- forecast$create_forecast(
@@ -27,14 +28,15 @@ first_train_then_forecast <- function(
     model_name = model_name, 
     df_init = df_init, 
     train_object = df_train_result,
-    forecast_horizon_in_days = forecast_horizon_in_days
+    forecast_horizon_in_days = forecast_horizon_in_days,
+    tune_metric = tune_metric
   )
   
   return(df_forecast_result)
 }
 
-write_intermediate_test_set_result <- function(model_name, df_forecast_result) {
-  path <- common$path_model_intermediate_test_set_object(model_name)
+write_intermediate_test_set_result <- function(model_name, df_forecast_result, tune_metric = "rmse") {
+  path <- common$path_model_intermediate_test_set_object(model_name, tune_metric)
   
   saveRDS(df_forecast_result, path)
   
@@ -49,7 +51,8 @@ get_test_set_results <- function(
     df_init, 
     config,
     forecast_horizon_in_days = 1,
-    save_intermediate_result = FALSE
+    save_intermediate_result = TRUE,
+    tune_metric = "rmse"
 ) {
   first_train_date <- as.Date(from_date) - lubridate$days(1)
   last_train_date <- as.Date(to_date) - lubridate$days(1)
@@ -68,14 +71,17 @@ get_test_set_results <- function(
       model_name = model_name, 
       df_init = df_init, 
       config = config, 
-      forecast_horizon_in_days = forecast_horizon_in_days
+      forecast_horizon_in_days = forecast_horizon_in_days,
+      tune_metric = tune_metric
     )
     
     df_forecast_result <- df_forecast_result %>%
       bind_rows(df_forecast_result_x)
     
-    write_intermediate_test_set_result(model_name, df_forecast_result)
-    
+    if (save_intermediate_result) {
+      write_intermediate_test_set_result(model_name, df_forecast_result, tune_metric = tune_metric)
+    }
+
     pb$tick()
   }
   

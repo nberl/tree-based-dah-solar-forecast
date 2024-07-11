@@ -15,8 +15,10 @@ box::use(
 )
 
 #' @export
-read_train_object <- function(date, model_name) {
-  path <- common$path_model_train_object(date = date, model_name = model_name)
+read_train_object <- function(date, model_name, tune_metric = "rmse") {
+  path <- common$path_model_train_object(
+    date = date, model_name = model_name, tune_metric = tune_metric
+  )
   object <- readRDS(file = path)
   
   return(object)
@@ -57,7 +59,8 @@ create_forecast <- function(
     model_name, 
     df_init, 
     train_object = NULL,
-    forecast_horizon_in_days = 1
+    forecast_horizon_in_days = 1,
+    tune_metric = "rmse"
 ) {
   set.seed(123)  # set seed for reproducibility
   
@@ -65,7 +68,7 @@ create_forecast <- function(
     # date when forecast is created is also the same date when the model is trained
     # the training dataset always contains data until train_date - 1
     train_date <- date
-    train_object <- read_train_object(train_date, model_name)
+    train_object <- read_train_object(train_date, model_name, tune_metric = tune_metric)
   }
   
   # We always start predicting from the next date
@@ -81,12 +84,13 @@ create_forecast <- function(
   prediction_vars <- train_object$prediction_vars[[1]]
   other_vars <- colnames(df_selected)[!(colnames(df_selected) %in% prediction_vars)]
   
-  df_forecast <- df_selected[, other_vars] %>% 
-    bind_cols(
-      train_object$recipe[[1]] %>% 
-        recipes$prep(training = train_object$df_train[[1]]) %>%
-        recipes$bake(new_data = df_selected) 
-    )
+  df_forecast <- df_selected
+  #[, other_vars] %>% 
+  #   bind_cols(
+  #     train_object$recipe[[1]] %>% 
+  #       recipes$prep(training = train_object$df_train[[1]]) %>%
+  #       recipes$bake(new_data = df_selected) 
+  #   )
   
   complete_rows <- check_completeness(df_forecast, prediction_vars)
   
@@ -101,8 +105,10 @@ create_forecast <- function(
 }
 
 #' @export
-write_forecast_object <- function(date, model_name, forecast_object) {
-  path <- common$path_model_forecast_object(date = date, model_name = model_name)
+write_forecast_object <- function(date, model_name, forecast_object, tune_metric = "rmse") {
+  path <- common$path_model_forecast_object(
+    date = date, model_name = model_name, tune_metric = tune_metric
+  )
   
   saveRDS(object = forecast_object, file = path)
   
@@ -112,18 +118,28 @@ write_forecast_object <- function(date, model_name, forecast_object) {
 }
 
 #' @export
-run_forecast_model <- function(date, model_name, df_init, config, save_object = TRUE) {
+run_forecast_model <- function(
+    date, model_name, df_init, config, 
+    save_object = TRUE,
+    tune_metric = "rmse"
+) {
   forecast_date <- as.Date(date) + lubridate$days(1) # date that is forecasted
   
   forecast_result <- create_forecast(
     date = date, 
     model_name = model_name, 
     df_init = df_init, 
-    train_object = NULL
+    train_object = NULL,
+    tune_metric = tune_metric
   )
   
   if (save_object) {
-    write_forecast_object(date = forecast_date, model_name = model_name, forecast_object = forecast_result)
+    write_forecast_object(
+      date = forecast_date, 
+      model_name = model_name, 
+      forecast_object = forecast_result, 
+      tune_metric = tune_metric
+    )
   }
   
   return(forecast_result)

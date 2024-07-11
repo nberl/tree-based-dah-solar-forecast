@@ -22,6 +22,15 @@ get_model_specification <- function(model_type, tune_hyperparameters) {
       penalty = tune(),
       mixture = tune()
     ),
+    glmnet = parsnip$linear_reg(
+      penalty = tune(),
+      mixture = tune()
+    ),
+    nnet = parsnip$mlp(
+      hidden_units = tune(),
+      penalty = tune(),
+      epochs = tune()
+    ),
     ranger = parsnip$rand_forest(
       mtry = tune(),
       min_n = tune(),
@@ -62,10 +71,13 @@ get_model_specification <- function(model_type, tune_hyperparameters) {
 }
 
 #' @export
-get_hyperparameters <- function(model_name) {
-  path <- common$path_model_hyperparameters(model_name = model_name)
+get_hyperparameters <- function(model_name, config_tune, tune_metric = "rmse") {
+  path <- common$path_model_hyperparameters(model_name = model_name, metric = tune_metric)
   if (file.exists(path)) {
     df_hyperparameters <- readRDS(path)
+  } else if (!is.null(config_tune$fixed_hyperparameters)) {
+    print("Use fixed hyperparameters from config")
+    df_hyperparameters <- as_tibble(config_tune$fixed_hyperparameters)
   } else {
     print("No tuned hyperparameters found, using default hyperparameters instead!")
     df_hyperparameters <- tibble()
@@ -75,7 +87,11 @@ get_hyperparameters <- function(model_name) {
 }
 
 #' @export
-train_model <- function(train_date, model_name, df_init, config) {
+train_model <- function(
+    train_date, model_name, df_init, config,
+    df_hyperparameters = NULL,
+    tune_metric = "rmse"
+) {
   set.seed(123)  # set seed for reproducibility
   
   config_preprocess <- config$preprocess
@@ -120,8 +136,14 @@ train_model <- function(train_date, model_name, df_init, config) {
     config_model = config_model
   )
   
-  df_hyperparameters <- get_hyperparameters(model_name = model_name)
-  
+  if (is.null(df_hyperparameters)) {
+    df_hyperparameters <- get_hyperparameters(
+      model_name = model_name, 
+      config_tune = config_model$tune,
+      tune_metric = tune_metric
+    )
+  }
+
   model <- get_model_specification(
     model_type = config_model$engine,
     tune_hyperparameters = colnames(df_hyperparameters)
@@ -133,7 +155,7 @@ train_model <- function(train_date, model_name, df_init, config) {
     workflows$add_recipe(recipe)
   
   final_workflow <- tune$finalize_workflow(workflow, df_hyperparameters)
-  
+
   fitted_model <- parsnip$fit(final_workflow, data = df)
 
   prediction_vars <- recipe %>%
@@ -160,8 +182,10 @@ train_model <- function(train_date, model_name, df_init, config) {
 }
 
 #' @export
-write_train_object <- function(date, model_name, train_object) {
-  path <- common$path_model_train_object(date = date, model_name = model_name)
+write_train_object <- function(date, model_name, train_object, tune_metric = "rmse") {
+  path <- common$path_model_train_object(
+    date = date, model_name = model_name, tune_metric = tune_metric
+  )
   
   saveRDS(object = train_object, file = path)
   
@@ -171,18 +195,27 @@ write_train_object <- function(date, model_name, train_object) {
 }
 
 #' @export
-run_train_model <- function(train_date, model_name, df_init, config, save_object = TRUE) {
+run_train_model <- function(
+    train_date, model_name, df_init, config, 
+    save_object = TRUE, 
+    df_hyperparameters = NULL,
+    tune_metric = "rmse"
+) {
   train_date <- as.Date(train_date)  # date when model is trained
 
   train_result <- train_model(
     train_date = train_date, 
     model_name = model_name,
     df_init = df_init, 
-    config = config
+    config = config,
+    df_hyperparameters = df_hyperparameters,
+    tune_metric = tune_metric
   )
   
   if (save_object) {
-    write_train_object(date = train_date, model_name = model_name, train_object = train_result)
+    write_train_object(
+      date = train_date, model_name = model_name, train_object = train_result, tune_metric = tune_metric
+    )
   }
 
   return(train_result)
