@@ -16,14 +16,14 @@ tune_date <- as.Date("2021-12-31")
 
 # selected_model <- "solar_load_factor_be_fs2_av_xgb"
 
-already_tuned <- list.files("results/hyperparameters/") %>%
+already_tuned <- list.files("results/hyperparameters/rmse") %>%
   gsub(".rds", "", .)
 to_be_tuned <- included_models[!(included_models %in% already_tuned)]
 for (selected_model in to_be_tuned) {
   print(selected_model)
   selected_config <- config[[selected_model]]
   
-  if (!is.null(config[[selected_model]]$model$tune)) {
+  if (!is.null(config[[selected_model]]$model$tune$tune_hyperparameters)) {
     print("Start tuning process: ")
     
     df_init <- total_dataframe$preprocess(start_date, end_date, selected_config$preprocess)

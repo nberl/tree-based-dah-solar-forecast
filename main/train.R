@@ -28,7 +28,9 @@ for (selected_model in included_models) {
     model_name = selected_model, 
     df_init = df_init, 
     config = selected_config, 
-    save_object = FALSE
+    save_object = FALSE,
+    df_hyperparameters = NULL,
+    tune_metric = "rmse"
   )
   run_time <- Sys.time() - start
   print(run_time)

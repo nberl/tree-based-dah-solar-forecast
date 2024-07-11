@@ -32,11 +32,15 @@ df_averaged_weather <- total_dataframe$preprocess(
 )
 ts_vis$plot_weather_variables_time_series(df_averaged_weather, save = SAVE_PLOTS)
 
+ts_vis$plot_correlation_heatmap_variables(df_averaged_weather, save = SAVE_PLOTS)
+
 # geo plots
 df_included_coords <- load_data$read_rds("weather/df_weather_locations.rds")
 geo_vis$plot_included_weather_locations(df_included_coords, save = SAVE_PLOTS)
 geo_vis$plot_clusters(df_included_coords, n_clusters = 5, save = SAVE_PLOTS)
 geo_vis$plot_clusters(df_included_coords, n_clusters = 12, save = SAVE_PLOTS)
+
+geo_vis$plot_silhouette_score_per_cluster(save = SAVE_PLOTS)
 
 # tune/validation & train/forecast windows
 selected_model <- "solar_load_factor_be_fs1_av_rt"

@@ -6,24 +6,26 @@ box::use(
 
 config <- load_config$load_config("solar_models.yml", mode = "default")$included_models
 included_models <- names(config)
+included_models <- included_models[!grepl("_mlp|_n100|_n800", included_models)]
+tune_metric <- "mae"
 
-metrics <- c("mse", "mae", "smape")
+metrics <- c("mse", "mae")
 alphas <- c(0.01, 0.05, 0.1)
 statistic <- "Tmax"
-
 mcs_results <- list()
 for (metric in metrics) {
   for (alpha in alphas) {
     confidence_level <- 100 - (alpha * 100)
-    name <- paste("mcs", metric, confidence_level, sep = "_")
-    path <- common$path_mcs_result(metric, confidence_level)
+    name <- paste("mcs", metric, confidence_level, tune_metric, sep = "_")
+    path <- common$path_mcs_result(metric, confidence_level, tune_metric)
     folder <- dirname(path)
     print(name)
     
     if (!(paste0(name, ".rds") %in% list.files(folder))) {
       print("Start MCS procedure")
       mcs <- model_confidence_set$get_mcs_result(
-        included_models = included_models, 
+        included_models = included_models,
+        tune_metric = tune_metric,
         alpha = alpha,
         metric = metric,
         statistic = statistic
